@@ -57,7 +57,11 @@ const emptyBucket = (bucketName, cli, s3) => {
       list.Contents.map(item => {
         params.Delete.Objects.push({ Key: item.Key });
       });
-      return s3.deleteObjects(params).promise();
+      if (params.Delete.Objects.length > 0) {
+        return s3.deleteObjects(params).promise();
+      } else {
+        Promise.resolve('no objects to delete');
+      }
     }).then((res) => {
       cli.consoleLog(`${messagePrefix}${chalk.yellow(`Emptied bucket: ${bucketName}`)}`);
       return resolve();
