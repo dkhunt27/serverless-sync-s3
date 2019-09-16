@@ -66,9 +66,14 @@ const emptyBucket = (bucketName, cli, s3) => {
       cli.consoleLog(`${messagePrefix}${chalk.yellow(`Emptied bucket: ${bucketName}`)}`);
       return resolve();
     }).catch(err => {
-      const errMsg = `error emptying s3 bucket ${bucketName}. error: ${err.message}`;
-      cli.consoleLog(`${messagePrefix}${chalk.red(errMsg)}`)
-      return reject(new Error(errMsg));
+      if (err.message === "The specified bucket does not exist") {
+        cli.consoleLog(`${messagePrefix}${chalk.yellow(`Bucket did not exist (thus already empty): ${bucketName}`)}`);
+        return resolve();
+      } else {
+        const errMsg = `error emptying s3 bucket ${bucketName}. error: ${err.message}`;
+        cli.consoleLog(`${messagePrefix}${chalk.red(errMsg)}`)
+        return reject(new Error(errMsg));
+      }
     });
   });
 };
