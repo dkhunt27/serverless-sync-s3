@@ -25,7 +25,8 @@ const walkSync = (currentDirPath, callback) => {
 const syncToS3 = (localDir, s3BucketName, cli, s3) => {
   return walkSync(localDir, async (filePath) => {
     cli.consoleLog(`${messagePrefix}${chalk.yellow(`Processing file: ${filePath}`)}`);
-    const key = filePath.replace(localDir+'/', '');
+    let key = filePath.replace(localDir+path.sep, '');
+    key = key.replace(/\\/g,'/'); // handle windows "/" path separator
     const contentType = mime.contentType(path.extname(filePath)) ;
     const contentTypeParts = contentType.split(';');
     const params = {
@@ -121,6 +122,8 @@ class ServerlessSyncS3 {
 
   beforeSync() {
     this.serverless.cli.consoleLog(`${messagePrefix}${chalk.yellow('syncS3 starting...')}`);
+    this.serverless.cli.consoleLog(`${messagePrefix}${chalk.yellow('empty bucket before syncing')}`);
+    return this.empty();  // empty bucket before syncing
   }
 
   sync() {
