@@ -10,18 +10,6 @@ const mime = require('mime-types');
 
 const messagePrefix = 'Serverless: Sync S3: ';
 
-// const walkSync = (currentDirPath, callback) => {
-//   fs.readdirSync(currentDirPath).forEach((name) => {
-//     const filePath = path.join(currentDirPath, name);
-//     const stat = fs.statSync(filePath);
-//     if (stat.isFile()) {
-//       return callback(filePath, stat);
-//     } else if (stat.isDirectory()) {
-//       return walkSync(filePath, callback);
-//     }
-//   });
-// };
-
 function walk(dir) {
   return new Promise((resolve, reject) => {
     fs.readdir(dir, (error, files) => {
@@ -56,15 +44,22 @@ const syncToS3 = ({localDir, bucketName, cli, s3}) => {
       const promises = [];
       files.map(file => {
         cli.consoleLog(`${messagePrefix}${chalk.yellow(`Processing file: ${file}`)}`);
+
         let key = file.replace(localDir+path.sep, '');
         key = key.replace(/\\/g,'/'); // handle windows "/" path separator
-        const contentType = mime.contentType(path.extname(file)) ;
-        const contentTypeParts = contentType.split(';');
+
+        let contentType = "text/plain";  // default to text/plain
+        const contentTypeTemp = mime.contentType(path.extname(file));
+        if (contentTypeTemp) {
+          const contentTypeParts = contentTypeTemp.split(';');
+          contentType = contentTypeParts[0];
+        }
+
         const params = {
           Bucket: bucketName,
           Key: key,
           Body: fs.readFileSync(file),
-          ContentType: contentTypeParts[0]
+          ContentType: contentType
         };
         promises.push(s3.putObject(params).promise().then(() => {
           cli.consoleLog(`${messagePrefix}${chalk.yellow(`Successfully uploaded ${file} to s3://${bucketName}/${key}`)}`);
